@@ -1,0 +1,65 @@
+#include <ESP8266WiFi.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include "secrets.h"
+
+// Wi-Fi credentials
+//const char* ssid     = "yourSSID";
+//const char* password = "yourPassword";
+
+// Initialize the LCD with I2C address (typically 0x27) and size 16x2
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Define NTP Client to get time
+WiFiUDP ntpUDP;
+//NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);  // Timezone offset, sync interval 60s
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 7200, 60000);  // UTC+2, sync every 60s
+
+
+void setup(){
+  // Start Serial
+  Serial.begin(115200);
+  
+  // Initialize the LCD
+  lcd.init();
+  lcd.backlight();
+  
+  // Connect to Wi-Fi
+  lcd.setCursor(0, 0);
+  lcd.print("Connecting...");
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    lcd.setCursor(0, 1);
+    lcd.print(".");
+    Serial.print(".");
+  }
+  
+  // Connected to Wi-Fi
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Connected!");
+  delay(1000);
+  
+  // Initialize NTPClient
+  timeClient.begin();
+}
+
+void loop() {
+  timeClient.update();
+
+  // Get formatted time
+  String formattedTime = timeClient.getFormattedTime();
+
+  // Display time on the LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Time:");
+  lcd.setCursor(0, 1);
+  lcd.print(formattedTime);
+
+  delay(1000);  // Update every second
+}
